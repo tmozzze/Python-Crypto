@@ -1,4 +1,3 @@
-import numpy as np
 
 IP = [58, 50, 42, 34, 26, 18, 10, 2,
       60, 52, 44, 36, 28, 20, 12, 4,
@@ -9,7 +8,6 @@ IP = [58, 50, 42, 34, 26, 18, 10, 2,
       61, 53, 45, 37, 29, 21, 13, 5,
       63, 55, 47, 39, 31, 23, 15, 7]
 
-# Таблица обратной перестановки (Final Permutation, FP)
 FP = [40, 8, 48, 16, 56, 24, 64, 32,
       39, 7, 47, 15, 55, 23, 63, 31,
       38, 6, 46, 14, 54, 22, 62, 30,
@@ -19,14 +17,12 @@ FP = [40, 8, 48, 16, 56, 24, 64, 32,
       34, 2, 42, 10, 50, 18, 58, 26,
       33, 1, 41, 9, 49, 17, 57, 25]
 
-# Таблица расширяющей перестановки (Expansion E)
 E = [32, 1, 2, 3, 4, 5, 4, 5, 6, 7,
      8, 9, 8, 9, 10, 11, 12, 13, 12, 13,
      14, 15, 16, 17, 16, 17, 18, 19, 20, 21,
      20, 21, 22, 23, 24, 25, 24, 25, 26, 27,
      28, 29, 28, 29, 30, 31, 32, 1]
 
-# Таблица перестановки P
 P = [16, 7, 20, 21,
      29, 12, 28, 17,
      1, 15, 23, 26,
@@ -36,7 +32,6 @@ P = [16, 7, 20, 21,
      19, 13, 30, 6,
      22, 11, 4, 25]
 
-# Таблица для сокращения ключа и его перестановки (PC-1)
 PC1 = [57, 49, 41, 33, 25, 17, 9,
        1, 58, 50, 42, 34, 26, 18,
        10, 2, 59, 51, 43, 35, 27,
@@ -46,7 +41,6 @@ PC1 = [57, 49, 41, 33, 25, 17, 9,
        14, 6, 61, 53, 45, 37, 29,
        21, 13, 5, 28, 20, 12, 4]
 
-# Таблица для перестановки ключа после сдвига (PC-2)
 PC2 = [14, 17, 11, 24, 1, 5, 3, 28,
        15, 6, 21, 10, 23, 19, 12, 4,
        26, 8, 16, 7, 27, 20, 13, 2,
@@ -54,7 +48,6 @@ PC2 = [14, 17, 11, 24, 1, 5, 3, 28,
        51, 45, 33, 48, 44, 49, 39, 56,
        34, 53, 46, 42, 50, 36, 29, 32]
 
-# Количество битов, на которые нужно сдвигать ключ на каждом раунде
 SHIFT = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
 #S-Boxes
@@ -178,17 +171,19 @@ def f_function(R, key):
 
 
 def des_encrypt(message, key):
+    print('mes start')
+    print(hex(message))
 
-    message_bits =list(map(int, bin(int.from_bytes(message.encode(), 'big'))[2:].zfill(64)))
-    print(message_bits)
+    numbers_bits =list(map(int, bin(message)[2:].zfill(64)))
+    print("binary start")
+    print(''.join(map(str, numbers_bits)))
 
-    permuted_message = permute(message_bits, IP)
 
-    #print(permuted_message)
+    permuted_message = permute(numbers_bits, IP)
+
 
     L, R = permuted_message[:32], permuted_message[32:]
 
-    #print(L, R)
 
     round_keys = generate_round_keys(key)
     #print(round_keys)
@@ -201,19 +196,65 @@ def des_encrypt(message, key):
     final_block = R + L
 
     encrypted_message = permute(final_block, FP)
+    binary_exit = ''.join(map(str, encrypted_message))
+    print('binary enc')
+    print(binary_exit)
 
-    return ''.join(map(str, encrypted_message))
+    encrypted_message_int = int(binary_exit, 2)
+
+    return encrypted_message_int
 
 
+def des_decrypt(encrypt_message, key):
+    encrypt_int = encrypt_message
+    encrypt_bits = list(map(int, bin(encrypt_int)[2:].zfill(64)))
+
+    permuted_bits = permute(encrypt_bits, IP)
+
+    L, R = permuted_bits[:32], permuted_bits[32:]
+
+    round_keys = generate_round_keys(key)
+
+    # Функция Фейсткля с подачей ключей порядком наоборот
+    for i in range(15, -1, -1):
+        R_new = xor(L, f_function(R, round_keys[i]))
+        L = R
+        R = R_new
+
+    final_block = R + L
+
+    decrypted_message = permute(final_block, FP)
 
 
+    decrypted_binary_exit = ''.join(map(str, decrypted_message))
+    print('decrypted binary exit')
+    print(decrypted_binary_exit)
+    decrypted_message_int = int(decrypted_binary_exit, 2)
+
+    return decrypted_message_int
 
 
-
-message = "HELLO"
+message = 0x50454e4953
 key = 0x133457799BBCDFF1  # Пример ключа
 
 encrypted_message = des_encrypt(message, key)
+print("encrypted mes")
+print(hex(encrypted_message))
 
-print(f"Зашифрованное сообщение: {encrypted_message}")
+decrypted_mes = des_decrypt(encrypted_message, key)
+
+#85e813540f0ab405
+
+print("decrypted mes")
+print(hex((decrypted_mes)))
+
+sas = 'PENIS'
+print(type(sas.encode()))
+hex_representation = ''.join(format(byte, '02x') for byte in sas.encode())
+print(hex_representation)
+number = int(hex_representation, 16)
+bytes_sas = bytes.fromhex(hex_representation)
+print(bytes_sas)
+sas_mes = bytes_sas.decode()
+print(sas_mes)
 
